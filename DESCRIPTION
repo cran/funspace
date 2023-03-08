@@ -1,0 +1,40 @@
+Type: Package
+Package: funspace
+Title: Creating and Representing Functional Trait Spaces
+Version: 0.1.0
+Authors@R: c(
+    person("Carlos P.", "Carmona", , "perezcarmonacarlos@gmail.com", role = "cre",
+           comment = c(ORCID = "0000-0001-6935-4913")),
+    person("Nicola", "Pavanetto", , "nicola.pavanetto@emu.ee", role = "aut",
+           comment = c(ORCID = "0000-0001-6935-4913")),
+    person("Giacomo", "Puglielli", , "giacomo.puglielli@gmail.com", role = "aut",
+           comment = c(ORCID = "0000-0003-0085-4535"))
+  )
+Description: Estimation of functional spaces based on traits of organisms.
+    The package includes functions to impute missing trait values (with or
+    without considering phylogenetic information), and to create,
+    represent and analyse two dimensional functional spaces based on
+    principal components analysis, other ordination methods, or raw
+    traits. It also allows for mapping a third variable onto the
+    functional space.  See 'Carmona et al. (2021)' 
+    <doi:10.1038/s41586-021-03871-y>, 'Puglielli et al.  (2021)'
+    <doi:10.1111/nph.16952>, 'Carmona et al. (2021)'
+    <doi:10.1126/sciadv.abf2675>, 'Carmona et al. (2019)'
+    <doi:10.1002/ecy.2876> for more information.
+License: GPL-3
+Depends: R (>= 2.10)
+Imports: ade4, ape, ks, mgcv, missForest, MASS, paran, phytools,
+        viridis
+Suggests: testthat (>= 3.0.0)
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
+Config/testthat/edition: 3
+NeedsCompilation: no
+Packaged: 2023-03-07 08:07:53 UTC; Carlos
+Author: Carlos P. Carmona [cre] (<https://orcid.org/0000-0001-6935-4913>),
+  Nicola Pavanetto [aut] (<https://orcid.org/0000-0001-6935-4913>),
+  Giacomo Puglielli [aut] (<https://orcid.org/0000-0003-0085-4535>)
+Maintainer: Carlos P. Carmona <perezcarmonacarlos@gmail.com>
+Repository: CRAN
+Date/Publication: 2023-03-08 14:50:05 UTC

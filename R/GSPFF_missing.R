@@ -1,0 +1,17 @@
+#' Aboveground traits from the global spectrum of plant form and function (incomplete data)
+#'
+#' Data on six aboveground traits for 10,746 species with incomplete trait information. Data was processed from the TRY database (https://www.try-db.org/TryWeb/Home.php) and used in the paper "Fine-root traits in the global spectrum of plant form and function (Carmona et al. 2021, Nature). The data is available in https://doi.org/10.6084/m9.figshare.13140146. Only species with information for at least three traits are included. All traits are log10 transformed and scaled.
+#'
+#' @format ## `GSPFF_missing`
+#' A data frame with 10,746 rows and 6 columns:
+#' \describe{
+#'   \item{la}{leaf area}
+#'   \item{ln}{leaf nitrogen content}
+#'   \item{ph}{plant height}
+#'   \item{sla}{specific leaf area}
+#'   \item{ssd}{specific stem density}
+#'   \item{sm}{seed mass}
+#'   ...
+#' }
+#' @source <https://doi.org/10.6084/m9.figshare.13140146>
+"GSPFF_missing"
