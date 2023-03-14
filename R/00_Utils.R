@@ -11,16 +11,15 @@ new_var_loading <- function(pca.object, PCs, trait_ranges){
   pcs <- pca.object$scores[, c(PCs[1], PCs[2])]
   fit <- new.loadings[, c(PCs[1], PCs[2])]
 
-  arc.tan <- numeric()
+  angle <- length <- numeric()
   for(i in 1:nrow(fit)){
-    arc.tan[i] <- atan2(fit[i,2], fit[i,1])
-    arc.tan[i] <- ifelse(arc.tan[i] < 0, arc.tan[i] + 2 * pi, arc.tan[i])
+    angle[i] <- atan2(fit[i, 2], fit[i, 1])
+    length[i] <- sqrt(fit[i, 2]**2 + fit[i, 1]**2)
   }
-
   for(i in 1:nrow(fit)){
     meanRange <- mean(unlist(lapply(trait_ranges, abs)))
-    fit[i,1] <- meanRange * cos(arc.tan[i])
-    fit[i,2] <- meanRange * sin(arc.tan[i])
+    fit[i, 1] <- meanRange * cos(angle[i]) * length[i]
+    fit[i, 2] <- meanRange * sin(angle[i]) * length[i]
   }
   load.fit <- list(arrows = fit, loadings = new.loadings)
   return(load.fit)

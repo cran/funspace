@@ -20,7 +20,7 @@
   pnt.cex = 0.5,
   pnt.col = "grey80",
   arrows = FALSE,
-  arrows.length = 0.8,
+  arrows.length = 1,
   arrows.head = 0.08,
   arrows.col = "black",
   arrows.label.col = "black",
@@ -73,7 +73,7 @@
 
 \item{arrows}{Logical, defaults to \code{FALSE}. In case the functional space is based on a PCA, should the loadings of the original traits be represented by arrows in the functional space?}
 
-\item{arrows.length}{Numerical. Graphical parameter to set the length of the arrow  (see \code{arrows}). Lower values lead to shorter arrows, which can help to make arrows fit within the represented functional space. Defaults to 0.8.}
+\item{arrows.length}{Numerical. Graphical parameter to set the length of the arrow  (see \code{arrows}). Lower values lead to shorter arrows, which can help to make arrows fit within the represented functional space. Defaults to 1.}
 
 \item{arrows.head}{Numerical. Graphical parameter to set the length of the arrow head (see \code{arrows}). Defaults to 0.08.}
 

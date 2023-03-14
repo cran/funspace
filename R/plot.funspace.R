@@ -18,7 +18,7 @@
 #'@param pnt.cex Numerical. Graphical parameter to set the size of the points. Default is 0.5. See \code{cex} argument in \code{graphics::par()}.
 #'@param pnt.col Graphical parameter to set the points color. Default is \code{"grey80"}.
 #'@param arrows Logical, defaults to \code{FALSE}. In case the functional space is based on a PCA, should the loadings of the original traits be represented by arrows in the functional space?
-#'@param arrows.length Numerical. Graphical parameter to set the length of the arrow  (see \code{arrows}). Lower values lead to shorter arrows, which can help to make arrows fit within the represented functional space. Defaults to 0.8.
+#'@param arrows.length Numerical. Graphical parameter to set the length of the arrow  (see \code{arrows}). Lower values lead to shorter arrows, which can help to make arrows fit within the represented functional space. Defaults to 1.
 #'@param arrows.head Numerical. Graphical parameter to set the length of the arrow head (see \code{arrows}). Defaults to 0.08.
 #'@param arrows.col Graphical parameter to set the arrows color (see \code{arrows}). Default is \code{"black"}.
 #'@param arrows.label.col Graphical parameter to set the color of the arrows labels  color. Default is \code{"black"}.
@@ -68,7 +68,7 @@ plot.funspace <- function(x = NULL,
                           pnt.cex = 0.5,
                           pnt.col = "grey80",
                           arrows = FALSE,
-                          arrows.length = 0.8,
+                          arrows.length = 1,
                           arrows.head = 0.08,
                           arrows.col = "black",
                           arrows.label.col = "black",
@@ -154,7 +154,8 @@ plot.funspace <- function(x = NULL,
       # Plotting arrows
       if(arrows == TRUE & x$parameters$princomp == TRUE){
         graphics::arrows(x0 = 0, y0 = 0,
-                         x1 = x$PCAInfo$fit[[1]][, 1] * arrows.length, y1 = x$PCAInfo$fit[[1]][, 2] * arrows.length,
+                         x1 = x$PCAInfo$fit[[1]][, 1] * arrows.length,
+                         y1 = x$PCAInfo$fit[[1]][, 2] * arrows.length,
                          length = arrows.head, col = arrows.col)
         graphics::text(x = x$PCAInfo$fit[[1]][, 1] * arrows.length * arrows.label.pos,
                        y = x$PCAInfo$fit[[1]][, 2] * arrows.length * arrows.label.pos,

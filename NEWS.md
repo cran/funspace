@@ -1,3 +1,3 @@
-# funspace 0.1.0
+# funspace 0.1.1
 
-* Added a `NEWS.md` file to track changes to the package.
+* Fixed a problem with arrows length in new_var_loading().

@@ -1,7 +1,7 @@
 Type: Package
 Package: funspace
 Title: Creating and Representing Functional Trait Spaces
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("Carlos P.", "Carmona", , "perezcarmonacarlos@gmail.com", role = "cre",
            comment = c(ORCID = "0000-0001-6935-4913")),
@@ -31,10 +31,10 @@ LazyData: true
 RoxygenNote: 7.2.3
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2023-03-07 08:07:53 UTC; Carlos
+Packaged: 2023-03-13 12:31:09 UTC; carlosperezcarmona
 Author: Carlos P. Carmona [cre] (<https://orcid.org/0000-0001-6935-4913>),
   Nicola Pavanetto [aut] (<https://orcid.org/0000-0001-6935-4913>),
   Giacomo Puglielli [aut] (<https://orcid.org/0000-0003-0085-4535>)
 Maintainer: Carlos P. Carmona <perezcarmonacarlos@gmail.com>
 Repository: CRAN
-Date/Publication: 2023-03-08 14:50:05 UTC
+Date/Publication: 2023-03-14 14:30:02 UTC
