@@ -13,7 +13,7 @@
 #'CP Carmona, F de Bello, NWH Mason, J Leps (2019). Trait Probability Density (TPD): measuring functional diversity across scales based on trait probability density with R. Ecology e02876.
 #'T Duong, T., (2007). ks: Kernel Density Estimation and Kernel Discriminant Analysis for Multivariate Data in R. J. Stat. Softw. 21(7), 1-16.
 #'
-#'@param x Data to create the functional space. It can be either a PCA object obtained using the \code{princomp} function, or a matrix or data frame with two columns (representing two dimensions which can be traits or ordination scores).
+#'@param x Data to create the functional space. It can be either a PCA object obtained using the \code{princomp} function, a PCoA obtained using the \code{capscale} function from the \code{vegan} package, an NMDS generated with the \code{metaMDS} or \code{monoMDS} functions from \code{vegan}, a TPDs object generated with the \code{TPD} package or a matrix or data frame with at least two columns (representing two dimensions which can be either traits or ordination scores obtained with other methods).
 #'@param PCs A vector specifying the Principal Components to be considered (e.g. choosing \code{PCs = c(1,2)} would lead to to consider the first and the second principal components). Only applies if \code{x} contains a PCA. Defaults to \code{c(1, 2)}, which selects the first two principal components.
 #'@param group.vec An object of class factor specifying the levels of the grouping variable.
 #'@param fixed.bw Logical indicating whether the same bandwidth that is used in the kde estimation for the whole dataset should also be used for the kde estimation of individual groups of observations (\code{fixed.bw = T}), or if a different bandwidth has to be estimated for each group ((\code{fixed.bw = F})). Defaults to TRUE, which makes the most extreme quantiles of the individual groups to coincide with those of the global distribution, and allows for more meaningful comparisons of the amount of functional space occupied by groups (functional richness).
@@ -46,6 +46,7 @@
 #'    pnt.col = rgb(0, 1, 1, alpha = 0.2))
 #'
 #' @import ks
+#' @import vegan
 #' @export
 
 funspace <- function(x,
@@ -57,84 +58,93 @@ funspace <- function(x,
                      threshold = 0.999
                      ){
 
+  args <- list(x = x, PCs = PCs, group.vec = group.vec, n_divisions = n_divisions,
+               trait_ranges = trait_ranges, threshold = threshold)
   #1. Creating list to store results
   results <- list()
   #2. Definition of limits and grid for kde estimation
   results$parameters <- list()
+  results$originalX <- x
+  sType  <- do.call(spaceType, args)
+  results$parameters$objectClass <- sType$objectClass
+  results$parameters$PCs <- sType$PCs
+  results$parameters$pcs <- sType$pcs
+  results$parameters$bandwidth <-sType$bandwidth
+  results$parameters$threshold <- sType$threshold
+  results$parameters$group.vec <- sType$group.vec
+  results$parameters$trait_ranges <- sType$trait_ranges
+  results$parameters$evaluation_grid <- sType$evaluation_grid
 
-  if (inherits(x, "princomp")){
-    results$parameters$princomp <- TRUE
-    results$parameters$PCs <- PCs
-    results$parameters$pcs <- x$scores[, c(PCs[1], PCs[2])]
-  } else{
-    if(dim(x)[2] != 2){
-      stop("When x is not a PCA object, it should have two columns.")
-    }
-    if(!is.numeric(x[, 1]) | !is.numeric(x[, 2])){
-      stop("x should contain only numeric traits.")
-    }
-    results$parameters$princomp <- FALSE
-    results$parameters$pcs <- x
-  }
-  results$parameters$bandwidth <- ks::Hpi(x = results$parameters$pcs)      # optimal bandwidth estimation
-  results$parameters$threshold <- threshold
-  results$parameters$group.vec <- group.vec
-
-  #2.1 space limits
-  results$parameters$trait_ranges <- limits_plot(pcs = results$parameters$pcs,
-                                                 H = results$parameters$bandwidth,
-                                                 bufferSD = 8,
-                                                 trait_ranges = trait_ranges)
-    #2.2. Estimation of bivariate grid to estimate kde
-  results$parameters$evaluation_grid <- grid_creation(trait_ranges = results$parameters$trait_ranges,
-                                                      n_divisions = n_divisions)
-  colnames(results$parameters$evaluation_grid) <- c("PC1", "PC2")
-  #### ALWAYS MAKE A SINGLE GLOBAL PLOT:
+  #### EXCEPT WHEN A TPD OBJECT IS PROVIDED, MAKE A SINGLE GLOBAL PLOT:
   #4. kde estimation
-  est <- ks::kde(x = results$parameters$pcs,
-                 H = results$parameters$bandwidth,
-                 compute.cont = TRUE,
-                 eval.points = results$parameters$evaluation_grid)
+  if(results$parameters$objectClass != "TPDs"){
+    est <- ks::kde(x = results$parameters$pcs,
+                   H = results$parameters$bandwidth,
+                   compute.cont = TRUE,
+                   eval.points = results$parameters$evaluation_grid)
 
-  #5. Re-escaling of kde to integrate to 1:
-  est$estimate <- est$estimate /sum(est$estimate)
-  #6. Creating and plotting image matrix with quantiles and threshold
-  results$global <- list() # To store the global TPD
-  results$global$images <- list()
-  results$global$images$noThreshold.quantiles <- imageTPD(est, thresholdPlot = 1)
-  results$global$images$TPD.quantiles <- imageTPD(est, thresholdPlot = results$parameters$threshold)
-
+    #5. Re-escaling of kde to integrate to 1:
+    est$estimate <- est$estimate /sum(est$estimate)
+    #6. Creating and plotting image matrix with quantiles and threshold
+    results$global <- list() # To store the global TPD
+    results$global$images <- list()
+    results$global$images$noThreshold.quantiles <- imageTPD(est, thresholdPlot = 1)
+    results$global$images$TPD.quantiles <- imageTPD(est, thresholdPlot = results$parameters$threshold)
+  }
+  if(results$parameters$objectClass == "TPDs"){
+    results$global <- list()
+    results$global$images <- list()
+    results$global$images$noThreshold.quantiles <- NA
+    results$global$images$TPD.quantiles <- NA
+  }
   #### IF THERE ARE ALSO GROUPS:
-  if(!is.null(group.vec)){
+  if(!is.null(results$parameters$group.vec)){
     results$parameters$group.vec <- as.factor(results$parameters$group.vec)
     results$groups <- list()
-    pcs.gr <- data.frame(results$parameters$pcs, results$parameters$group.vec)
-    colnames(pcs.gr) <- c(colnames(results$parameters$pcs), "group.vec")
-    pcs.gr.list <- split(pcs.gr, pcs.gr$group.vec)
-    for(i in 1:length(pcs.gr.list)){
-      results$groups[[i]] <- list()
-      names(results$groups)[i] <- names(pcs.gr.list)[i]
-      results$groups[[i]]$parameters <- list()
-      results$groups[[i]]$parameters$points <- pcs.gr.list[[i]][,c(1,2)]
-      if(fixed.bw == FALSE){
-        results$groups[[i]]$parameters$bandwidth <- ks::Hpi(x = results$groups[[i]]$parameters$points)      # optimal bandwidth estimation at group level
-      } else{
-        results$groups[[i]]$parameters$bandwidth <- results$parameters$bandwidth      # Use global bandwidth
+    if(results$parameters$objectClass != "TPDs"){
+      pcs.gr <- data.frame(results$parameters$pcs, results$parameters$group.vec)
+      colnames(pcs.gr) <- c(colnames(results$parameters$pcs), "group.vec")
+      pcs.gr.list <- split(pcs.gr, pcs.gr$group.vec)
+      for(i in 1:length(pcs.gr.list)){
+        results$groups[[i]] <- list()
+        names(results$groups)[i] <- names(pcs.gr.list)[i]
+        results$groups[[i]]$parameters <- list()
+        results$groups[[i]]$parameters$points <- pcs.gr.list[[i]][,c(1,2)]
+        if(fixed.bw == FALSE){
+          results$groups[[i]]$parameters$bandwidth <- ks::Hpi(x = results$groups[[i]]$parameters$points)      # optimal bandwidth estimation at group level
+        } else{
+          results$groups[[i]]$parameters$bandwidth <- results$parameters$bandwidth      # Use global bandwidth
+        }
+        kde.gr <- ks::kde(x = results$groups[[i]]$parameters$points,
+                          H = results$groups[[i]]$parameters$bandwidth,
+                          compute.cont=TRUE,
+                          eval.points = results$parameters$evaluation_grid)     # kernel density estimation
+        #8. Re-escaling of kde to integrate to 1:
+        kde.gr$estimate <- kde.gr$estimate / sum(kde.gr$estimate)
+        #9. Creating and plotting image matrix with quantiles and threshold
+        results$groups[[i]]$images <- list()
+        results$groups[[i]]$images$noThreshold.quantiles <- imageTPD(kde.gr, thresholdPlot = 1)
+        results$groups[[i]]$images$TPD.quantiles  <- imageTPD(kde.gr, thresholdPlot = results$parameters$threshold)
       }
-      kde.gr <- ks::kde(x = results$groups[[i]]$parameters$points,
-                        H = results$groups[[i]]$parameters$bandwidth,
-                        compute.cont=TRUE,
-                        eval.points = results$parameters$evaluation_grid)     # kernel density estimation
-      #8. Re-escaling of kde to integrate to 1:
-      kde.gr$estimate <- kde.gr$estimate / sum(kde.gr$estimate)
-      #9. Creating and plotting image matrix with quantiles and threshold
-      results$groups[[i]]$images <- list()
-      results$groups[[i]]$images$noThreshold.quantiles <- imageTPD(kde.gr, thresholdPlot = 1)
-      results$groups[[i]]$images$TPD.quantiles  <- imageTPD(kde.gr, thresholdPlot = results$parameters$threshold)
+    }
+    if(results$parameters$objectClass == "TPDs"){
+      pcs.gr <- data.frame(results$parameters$pcs, results$parameters$group.vec)
+      colnames(pcs.gr) <- c(colnames(results$parameters$pcs), "group.vec")
+      pcs.gr.list <- split(pcs.gr, pcs.gr$group.vec)
+      for(i in 1:length(pcs.gr.list)){
+        results$groups[[i]] <- list()
+        names(results$groups)[i] <- names(pcs.gr.list)[i]
+        results$groups[[i]]$parameters <- list()
+        results$groups[[i]]$parameters$points <- pcs.gr.list[[i]][,c(1,2)]
+        results$groups[[i]]$images <- list()
+        results$groups[[i]]$images$noThreshold.quantiles <- imageTPDs(x = x, targetTPD = names(results$groups)[i], thresholdPlot = 1)
+        results$groups[[i]]$images$TPD.quantiles  <- imageTPDs(x = x, targetTPD = names(results$groups)[i],
+                                                               thresholdPlot = results$parameters$threshold)
+      }
     }
   }
-  #### Some information about the variance explained by the selected components for each trait
-  if(results$parameters$princomp == TRUE){
+  #### In the PCA case, some information about the variance explained by the selected components for each trait
+  if(results$parameters$objectClass == "princomp"){
     results$PCAInfo <- list()
     results$PCAInfo$pca.object <- x
     results$PCAInfo$fit <- new_var_loading(pca.object = x,
@@ -145,18 +155,30 @@ funspace <- function(x,
     Overall_explained <- rowSums(var.explained.out)
     results$PCAInfo$varExpl <- data.frame(var.explained.out, Overall_explained)
   }
-  results$parameters$type <- "standard"
-  class(results) <- "funspace"
-
+  #### Estimation of functional richness and divergence
   results$FD <- list()
-  results$FD$global <-list()
-  results$FD$global$FRich <- FRichnessGlobal(results)
-  results$FD$global$FDiv <- FDivergenceGlobal(results)
-
-  if(!is.null(group.vec)){
+  if(results$parameters$objectClass != "TPDs"){
+      results$FD$global <-list()
+      results$FD$global$FRich <- FRichnessGlobal(results)
+      results$FD$global$FDiv <- FDivergenceGlobal(results)
+    if(!is.null(group.vec)){
+      results$FD$groups <-list()
+      results$FD$groups$FRich <- FRichnessGroups(results)
+      results$FD$groups$FDiv <- FDivergenceGroups(results)
+    }
+  }
+  if(results$parameters$objectClass == "TPDs"){
+    results$FD$global <-list()
+    results$FD$global$FRich <- NA
+    results$FD$global$FDiv <- NA
     results$FD$groups <-list()
     results$FD$groups$FRich <- FRichnessGroups(results)
     results$FD$groups$FDiv <- FDivergenceGroups(results)
   }
+
+  results$parameters$type <- "standard"
+  class(results) <- "funspace"
+
   return(results)
 }
+

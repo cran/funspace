@@ -1,7 +1,7 @@
-Type: Package
 Package: funspace
+Type: Package
 Title: Creating and Representing Functional Trait Spaces
-Version: 0.1.1
+Version: 0.2.1
 Authors@R: c(
     person("Carlos P.", "Carmona", , "perezcarmonacarlos@gmail.com", role = "cre",
            comment = c(ORCID = "0000-0001-6935-4913")),
@@ -23,7 +23,7 @@ Description: Estimation of functional spaces based on traits of organisms.
     <doi:10.1002/ecy.2876> for more information.
 License: GPL-3
 Depends: R (>= 2.10)
-Imports: ade4, ape, ks, mgcv, missForest, MASS, paran, phytools,
+Imports: ade4, ape, ks, mgcv, missForest, MASS, paran, vegan, phytools,
         viridis
 Suggests: testthat (>= 3.0.0)
 Encoding: UTF-8
@@ -31,10 +31,10 @@ LazyData: true
 RoxygenNote: 7.2.3
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2023-03-13 12:31:09 UTC; carlosperezcarmona
+Packaged: 2024-02-13 13:29:23 UTC; carlosperezcarmona
 Author: Carlos P. Carmona [cre] (<https://orcid.org/0000-0001-6935-4913>),
   Nicola Pavanetto [aut] (<https://orcid.org/0000-0001-6935-4913>),
   Giacomo Puglielli [aut] (<https://orcid.org/0000-0003-0085-4535>)
 Maintainer: Carlos P. Carmona <perezcarmonacarlos@gmail.com>
 Repository: CRAN
-Date/Publication: 2023-03-14 14:30:02 UTC
+Date/Publication: 2024-02-13 15:20:02 UTC

@@ -4,7 +4,8 @@
 #'
 #'
 #'@param x A \code{funspace} object produced by \code{funspace()} or \code{funspaceGAM()}.
-#'@param type character indicating whether the plots should represent the global distribution of observations (\code{type = "global"}), or be separated by the groups (\code{type = "groups"}) provided when the \code{funspace} object was created. Defaults to \code{"global"}
+#'@param type character indicating whether the plots should represent the global distribution of observations (\code{type = "global"}), or be separated by the groups (\code{type = "groups"}) provided when the \code{funspace} object was created. Defaults to \code{"global"}. In the case of funspace objects based on a TPD function created with the \code{TPD} package, only groups are plotted (there is no "global" distribution).
+#'@param which.group when plotting groups, either a character or a number indicating the name (character) or position (number) of a single group to be plotted individually.
 #'@param quant.plot Logical, Default is \code{TRUE}. Should contour lines representing quantiles (specified in \code{quant}) be plotted?
 #'@param quant A vector specifying the quantiles to be plotted (in case \code{quant.plot} is set to \code{TRUE}. In case a TPD function is plotted, the quantiles represent the quantiles of the trait probability density function (lower quantiles indicate areas with higher probability density). In case a GAM object is plotted, the quantiles of the fitted response variable are plotted. In case a TPD function is plotted, default quantiles are 0.99 (or the selected threshold if it is lower), 0.5 and 0.25. In the GAM alternative, default quantiles are 0.99, 0.5 and 0.25.
 #'@param quant.lty type of line to be used to represent quantiles. See \code{lty} argument in \code{graphics::par()}.
@@ -28,13 +29,13 @@
 #'@param axis.title.x Character. The title to be plotted in the x axis if \code{axis.title} is set to \code{TRUE}. If not specified, a default axis title is plotted.
 #'@param axis.title.y Character. The title to be plotted in the y axis if \code{axis.title} is set to \code{TRUE}. If not specified, a default axis title is plotted.
 #'@param axis.title.cex Numerical. Graphical parameter to set the size of the axes titles. Default is 1.
+#'@param axis.title.line Numerical. Graphical parameter to set the on which margin line to plot axes titles. Default is 2.
 #'@param axis.cex Numerical. Graphical parameter to set the size of the axes annotation. Default is 1.
 #'@param globalContour Logical, Default is \code{TRUE}. Should a contour line representing the global distribution be plotted when \code{type} is set to \code{"groups"}. Adding a global contour lines provides a common reference for all groups and makes comparisons easier.
 #'@param globalContour.quant A vector specifying the quantiles to be plotted (in case \code{globalContour} is set to \code{TRUE}. Defaults to the threshold selected when the provided \code{funspace} object was originally created.
 #'@param globalContour.lwd Line width to be used in the global contour lines. Defaults to 3.
 #'@param globalContour.lty type of line to be used to represent the global contour lines. See \code{lty} argument in \code{graphics::par()}. Defaults to 1 (a continuous line).
 #'@param globalContour.col Graphical parameter to set the color of the global contour lines. Default is \code{"grey50"}.
-#'@param plot.panels Logical, Default is \code{TRUE}. In case groups are being represented, Should the function split the plot in panels (one panel per group)?
 #'@param xlim the x limits (x1, x2) of the plot.
 #'@param ylim the y limits (y1, y2) of the plot.
 #'@param ... Other arguments
@@ -55,6 +56,7 @@
 
 plot.funspace <- function(x = NULL,
                           type = "global",
+                          which.group = NULL,
                           quant.plot = FALSE,
                           quant = NULL,
                           quant.lty = 1,
@@ -78,13 +80,13 @@ plot.funspace <- function(x = NULL,
                           axis.title.x = NULL,
                           axis.title.y = NULL,
                           axis.title.cex = 1,
+                          axis.title.line = 2,
                           axis.cex = 1,
                           globalContour = TRUE,
                           globalContour.quant = NULL,
                           globalContour.lwd = 3,
                           globalContour.lty = 1,
                           globalContour.col = "grey50",
-                          plot.panels = TRUE,
                           xlim = NULL,
                           ylim = NULL,
                           ...) {
@@ -96,11 +98,9 @@ plot.funspace <- function(x = NULL,
     ylim <- range(x$parameters$evaluation_grid[, 2])
   }
   aspUse <- 1
-  if(x$parameters$princomp == FALSE){
+  if(x$parameters$objectClass == "princomp"){
     aspUse <- NA
   }
-  oldpar <- graphics::par(no.readonly = TRUE)
-  on.exit(par(oldpar))
 
   ############################################################################
   ############################################################################
@@ -121,7 +121,7 @@ plot.funspace <- function(x = NULL,
 
     ###     ###     ###     ###     ###
     ### CASE 1.1 Single plot ----
-    if(type == "global"){
+    if(type == "global" & x$parameters$objectClass != "TPDs"){
       im <- x$global$images$TPD.quantiles
       imNoThreshold <- x$global$images$noThreshold.quantiles
       #Color palette
@@ -152,7 +152,7 @@ plot.funspace <- function(x = NULL,
                 drawlabels = quant.labels, add = TRUE)
       }
       # Plotting arrows
-      if(arrows == TRUE & x$parameters$princomp == TRUE){
+      if(arrows == TRUE & x$parameters$objectClass == "princomp"){
         graphics::arrows(x0 = 0, y0 = 0,
                          x1 = x$PCAInfo$fit[[1]][, 1] * arrows.length,
                          y1 = x$PCAInfo$fit[[1]][, 2] * arrows.length,
@@ -164,32 +164,15 @@ plot.funspace <- function(x = NULL,
       }
       # Plotting axes titles
       if(axis.title == TRUE){
-        if(x$parameters$princomp == TRUE & is.null(axis.title.x)){
-          Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-          axis.title.x <- paste0("PC", x$parameters$PCs[1], " (", round(Proportion[x$parameters$PCs[1]], 2),"%", ")")
-        }
-        if(x$parameters$princomp == TRUE & is.null(axis.title.y)){
-          Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-          axis.title.y <- paste0("PC", x$parameters$PCs[2], " (", round(Proportion[x$parameters$PCs[2]], 2),"%", ")")
-        }
-        if(is.null(axis.title.x)){
-          axis.title.x <- "Dimension 1"
-        }
-        if(is.null(axis.title.y)){
-          axis.title.y <- "Dimension 2"
-        }
-        graphics::mtext(axis.title.x, cex = axis.title.cex, side = 1, line = 2.2, adj = 0.5)
-        graphics::mtext(axis.title.y, cex = axis.title.cex, side = 2, line = 2.2, adj = 0.5)
+        axistTitle <- axisTitles(x, axis.title.x = axis.title.x, axis.title.y = axis.title.y )
+        graphics::mtext(axistTitle[1], cex = axis.title.cex, side = 1, line = axis.title.line, adj = 0.5)
+        graphics::mtext(axistTitle[2], cex = axis.title.cex, side = 2, line = axis.title.line, adj = 0.5)
       }
     }
 
     ###     ###     ###     ###     ###
     ### CASE 1.2 Multiple plots ----
-    if(type == "groups"){
-      if(plot.panels == TRUE){
-        RowCol <- find_nrow_ncol(x$parameters$group.vec)
-        graphics::par(mfrow = RowCol, oma=c(4,4,2,2), mar = c(0.1, 0.1, 0.1, 0.1))
-      }
+    if(type == "groups" | x$parameters$objectClass == "TPDs"){
       #Color palette
       rangeVals <- numeric()
       for(i in 1:length(x$groups)){
@@ -201,6 +184,26 @@ plot.funspace <- function(x = NULL,
       ColorRamp_ex <- ColorRamp[round(1 + (min(rangeVals)) * ncolors / (threshold)) :
                                   round((max(rangeVals)) * ncolors / (threshold))]
       # Plot each group
+      groupsPlot <- x$groups
+      if(!is.null(which.group)){
+        if(length(which.group) != 1){
+          stop("'which.group' must have length 1.")
+        }
+        if(inherits(which.group, "character")){
+          if(which.group %in% names(x$groups)){
+            x$groups <- x$groups[which.group]
+          } else{
+            stop("When 'which.group' is a a character, it must be one of the groups contained in x$groups")
+          }
+        }
+        if(inherits(which.group, "numeric")){
+          if(which.group %in% 1:length(names(x$groups))){
+            x$groups <- x$groups[which.group]
+          } else{
+            stop("When 'which.group' is a a number, it must be a positive integer not larger than the number of groups contained in x$groups")
+          }
+        }
+      }
       for(i in 1:length(x$groups)){
         groupName <- names(x$groups)[i]
         im <- x$groups[[i]]$images$TPD.quantiles
@@ -212,19 +215,10 @@ plot.funspace <- function(x = NULL,
               col = ColorRamp_ex, xaxs="r", yaxs="r", xlab = "", ylab = "",
             axes=F, xlim = xlim, ylim = ylim, main = "", asp = aspUse)
         graphics::box(which="plot")
-        if(plot.panels == TRUE){
-          if(i > (RowCol[1] * (RowCol[2]-1))){
-            graphics::axis(1,tcl=0.3,lwd=0.8)
-          }
-          if(i %% RowCol[2] == 1){
-            graphics::axis(2, las=1, tcl=0.3,lwd=0.8)
-          }
-        } else{
-          graphics::axis(1,tcl=0.3,lwd=0.8)
-          graphics::axis(2, las=1, tcl=0.3,lwd=0.8)
-        }
+        graphics::axis(1,tcl=0.3,lwd=0.8)
+        graphics::axis(2, las=1, tcl=0.3,lwd=0.8)
         # Adding global contour lines
-        if(globalContour == TRUE){
+        if(globalContour == TRUE & x$parameters$objectClass != "TPDs"){
           if(is.null(globalContour.quant)){
             globalContour.quant <- x$parameters$threshold
           }
@@ -249,7 +243,7 @@ plot.funspace <- function(x = NULL,
                   drawlabels = quant.labels, add=T)
         }
         # Plotting arrows
-        if(arrows == TRUE & x$parameters$princomp == TRUE){
+        if(arrows == TRUE & x$parameters$objectClass == "princomp"){
           graphics::arrows(x0 = 0, y0 = 0,
                            x1 = x$PCAInfo$fit[[1]][, 1] * arrows.length, y1 = x$PCAInfo$fit[[1]][, 2] * arrows.length,
                            length = arrows.head, col = arrows.col)
@@ -260,44 +254,12 @@ plot.funspace <- function(x = NULL,
         }
         # Adding group names
         graphics::legend("topleft", legend = groupName, bty = "n")
-        # Plotting axes titles if panels are not active
-        if(axis.title == TRUE & plot.panels == FALSE){
-          if(x$parameters$princomp == T & is.null(axis.title.x)){
-            Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-            axis.title.x <- paste0("PC", x$parameters$PCs[1], " (", round(Proportion[x$parameters$PCs[1]], 2),"%", ")")
-          }
-          if(x$parameters$princomp == TRUE & is.null(axis.title.y)){
-            Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-            axis.title.y <- paste0("PC", x$parameters$PCs[2], " (", round(Proportion[x$parameters$PCs[2]], 2),"%", ")")
-          }
-          if(is.null(axis.title.x)){
-            axis.title.x <- "Dimension 1"
-          }
-          if(is.null(axis.title.y)){
-            axis.title.y <- "Dimension 2"
-          }
-          graphics::mtext(axis.title.x, cex = axis.title.cex, side = 1, line = 2.2, adj = 0.5)
-          graphics::mtext(axis.title.y, cex = axis.title.cex, side = 2, line = 2.2, adj = 0.5)
+        # Plotting axes titles
+        if(axis.title == TRUE){
+          axistTitle <- axisTitles(x, axis.title.x = axis.title.x, axis.title.y = axis.title.y )
+          graphics::mtext(axistTitle[1], cex = axis.title.cex, side = 1, line = axis.title.line, adj = 0.5)
+          graphics::mtext(axistTitle[2], cex = axis.title.cex, side = 2, line = axis.title.line, adj = 0.5)
         }
-      }
-      # Plotting common axes titles for all panels
-      if(axis.title == TRUE & plot.panels == TRUE){
-        if(x$parameters$princomp == TRUE & is.null(axis.title.x)){
-          Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-          axis.title.x <- paste0("PC", x$parameters$PCs[1], " (", round(Proportion[x$parameters$PCs[1]], 2),"%", ")")
-        }
-        if(x$parameters$princomp == TRUE & is.null(axis.title.y)){
-          Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-          axis.title.y <- paste0("PC", x$parameters$PCs[2], " (", round(Proportion[x$parameters$PCs[2]], 2),"%", ")")
-        }
-        if(is.null(axis.title.x)){
-          axis.title.x <- "Dimension 1"
-        }
-        if(is.null(axis.title.y)){
-          axis.title.y <- "Dimension 2"
-        }
-        graphics::mtext(axis.title.x, cex = axis.title.cex, side = 1, line = 2.2, adj = 0.5, outer = TRUE)
-        graphics::mtext(axis.title.y, cex = axis.title.cex, side = 2, line = 2.2, adj = 0.5, outer = TRUE)
       }
     }
   }
@@ -315,75 +277,59 @@ plot.funspace <- function(x = NULL,
     ###     ###     ###     ###     ###
     ### CASE 2.1 Single plot ----
     if(type == "global"){
-      im <- x$global$images$predicted
-      #Color palette
-      if(is.null(colors)){
-        colors <- viridis::viridis(5)
-      }
-      gradientColors <- grDevices::colorRampPalette(colors, space = "Lab")
-      ColorRamp <- gradientColors(ncolors)
+      if(x$parameters$objectClass != "TPDs"){
+        im <- x$global$images$predicted
+        #Color palette
+        if(is.null(colors)){
+          colors <- viridis::viridis(5)
+        }
+        gradientColors <- grDevices::colorRampPalette(colors, space = "Lab")
+        ColorRamp <- gradientColors(ncolors)
 
-      # make base plot
-      graphics::image(x = unique(x$parameters$evaluation_grid[,1]),
-            y = unique(x$parameters$evaluation_grid[,2]),
-            z = im,
-            col = ColorRamp, xaxs="r", yaxs="r", xlab = "", ylab = "",
-            axes = FALSE, xlim = xlim, ylim = ylim, main = "", asp = aspUse)
-      graphics::box(which="plot")
-      graphics::axis(1, tcl=0.3, lwd=0.8, cex = axis.cex)
-      graphics::axis(2, las=1, tcl=0.3, lwd=0.8, cex = axis.cex)
-      # Adding points
-      if(pnt == TRUE){
-        graphics::points(x$parameters$pcs[, ], pch = pnt.pch, cex = pnt.cex, col = pnt.col)
-      }
-      # Adding contour lines
-      if(quant.plot == TRUE){
-        graphics::contour(x = unique(x$parameters$evaluation_grid[,1]),
-                y = unique(x$parameters$evaluation_grid[,2]),
-                z = im,
-                levels = stats::quantile(im, na.rm=T, probs = quant),
-                labels = round(stats::quantile(im, na.rm=T, probs = quant), 2),
-                lwd = quant.lwd, lty = quant.lty, col = quant.col,
-                drawlabels = quant.labels, add = TRUE)
-      }
-      # Plotting arrows
-      if(arrows == TRUE & x$parameters$princomp == TRUE){
-        graphics::arrows(x0 = 0, y0 = 0,
-                         x1 = x$PCAInfo$fit[[1]][, 1] * arrows.length, y1 = x$PCAInfo$fit[[1]][, 2] * arrows.length,
-                         length = arrows.head, col = arrows.col)
-        graphics::text(x = x$PCAInfo$fit[[1]][, 1] * arrows.length * arrows.label.pos,
-                       y = x$PCAInfo$fit[[1]][, 2] * arrows.length * arrows.label.pos,
-                       labels = rownames(x$PCAInfo$fit[[1]]),
-                       col = arrows.label.col, cex = arrows.label.cex)
-      }
-      # Plotting axes titles
-      if(axis.title == TRUE){
-        if(x$parameters$princomp == TRUE & is.null(axis.title.x)){
-          Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-          axis.title.x <- paste0("PC", x$parameters$PCs[1], " (", round(Proportion[x$parameters$PCs[1]], 2),"%", ")")
+        # make base plot
+        graphics::image(x = unique(x$parameters$evaluation_grid[,1]),
+              y = unique(x$parameters$evaluation_grid[,2]),
+              z = im,
+              col = ColorRamp, xaxs="r", yaxs="r", xlab = "", ylab = "",
+              axes = FALSE, xlim = xlim, ylim = ylim, main = "", asp = aspUse)
+        graphics::box(which="plot")
+        graphics::axis(1, tcl=0.3, lwd=0.8, cex = axis.cex)
+        graphics::axis(2, las=1, tcl=0.3, lwd=0.8, cex = axis.cex)
+        # Adding points
+        if(pnt == TRUE){
+          graphics::points(x$parameters$pcs[, ], pch = pnt.pch, cex = pnt.cex, col = pnt.col)
         }
-        if(x$parameters$princomp == TRUE & is.null(axis.title.y)){
-          Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-          axis.title.y <- paste0("PC", x$parameters$PCs[2], " (", round(Proportion[x$parameters$PCs[2]], 2),"%", ")")
+        # Adding contour lines
+        if(quant.plot == TRUE){
+          graphics::contour(x = unique(x$parameters$evaluation_grid[,1]),
+                  y = unique(x$parameters$evaluation_grid[,2]),
+                  z = im,
+                  levels = stats::quantile(im, na.rm=T, probs = quant),
+                  labels = round(stats::quantile(im, na.rm=T, probs = quant), 2),
+                  lwd = quant.lwd, lty = quant.lty, col = quant.col,
+                  drawlabels = quant.labels, add = TRUE)
         }
-        if(is.null(axis.title.x)){
-          axis.title.x <- "Dimension 1"
+        # Plotting arrows
+        if(arrows == TRUE & x$parameters$objectClass == "princomp"){
+          graphics::arrows(x0 = 0, y0 = 0,
+                           x1 = x$PCAInfo$fit[[1]][, 1] * arrows.length, y1 = x$PCAInfo$fit[[1]][, 2] * arrows.length,
+                           length = arrows.head, col = arrows.col)
+          graphics::text(x = x$PCAInfo$fit[[1]][, 1] * arrows.length * arrows.label.pos,
+                         y = x$PCAInfo$fit[[1]][, 2] * arrows.length * arrows.label.pos,
+                         labels = rownames(x$PCAInfo$fit[[1]]),
+                         col = arrows.label.col, cex = arrows.label.cex)
         }
-        if(is.null(axis.title.y)){
-          axis.title.y <- "Dimension 2"
+        # Plotting axes titles
+        if(axis.title == TRUE){
+          axistTitle <- axisTitles(x, axis.title.x = axis.title.x, axis.title.y = axis.title.y )
+          graphics::mtext(axistTitle[1], cex = axis.title.cex, side = 1, line = axis.title.line, adj = 0.5)
+          graphics::mtext(axistTitle[2], cex = axis.title.cex, side = 2, line = axis.title.line, adj = 0.5)
         }
-        graphics::mtext(axis.title.x, cex = axis.title.cex, side = 1, line = 2.2, adj = 0.5)
-        graphics::mtext(axis.title.y, cex = axis.title.cex, side = 2, line = 2.2, adj = 0.5)
       }
     }
-
     ###     ###     ###     ###     ###
     ### CASE 2.2 Multiple plots ----
-    if(type == "groups"){
-      if(plot.panels == TRUE){
-        RowCol <- find_nrow_ncol(x$parameters$group.vec)
-        graphics::par(mfrow = RowCol, oma=c(4,4,2,2), mar = c(0.1, 0.1, 0.1, 0.1))
-      }
+    if(type == "groups"| x$parameters$objectClass == "TPDs"){
       #Color palette
       rangeVals <- numeric()
       for(i in 1:length(x$groups)){
@@ -397,6 +343,25 @@ plot.funspace <- function(x = NULL,
       gradientColors <- grDevices::colorRampPalette(colors, space = "Lab")
       ColorRamp <- gradientColors(ncolors)
       # Plot each group
+      if(!is.null(which.group)){
+        if(length(which.group) != 1){
+          stop("'which.group' must have length 1.")
+        }
+        if(inherits(which.group, "character")){
+          if(which.group %in% names(x$groups)){
+            x$groups <- x$groups[which.group]
+          } else{
+            stop("When 'which.group' is a a character, it must be one of the groups contained in x$groups")
+          }
+        }
+        if(inherits(which.group, "numeric")){
+          if(which.group %in% 1:length(names(x$groups))){
+            x$groups <- x$groups[which.group]
+          } else{
+            stop("When 'which.group' is a a number, it must be a positive integer not larger than the number of groups contained in x$groups")
+          }
+        }
+      }
       for(i in 1:length(x$groups)){
         if(x$groups[[i]]$gam$exist){
           groupName <- names(x$groups)[i]
@@ -412,19 +377,10 @@ plot.funspace <- function(x = NULL,
                 col = ColorRamp_ex, xaxs="r", yaxs="r", xlab = "", ylab = "",
                 axes=F, xlim = xlim, ylim = ylim, main = "", asp = 1)
           graphics::box(which="plot")
-          if(plot.panels == TRUE){
-            if(i > (RowCol[1] * (RowCol[2]-1))){
-              graphics::axis(1,tcl=0.3,lwd=0.8)
-            }
-            if(i %% RowCol[2] == 1){
-              graphics::axis(2, las=1, tcl=0.3,lwd=0.8)
-            }
-          } else{
-            graphics::axis(1,tcl=0.3,lwd=0.8)
-            graphics::axis(2, las=1, tcl=0.3,lwd=0.8)
-          }
+          graphics::axis(1,tcl=0.3,lwd=0.8)
+          graphics::axis(2, las=1, tcl=0.3,lwd=0.8)
           # Adding global contour lines
-          if(globalContour == TRUE){
+          if(globalContour == TRUE & x$parameters$objectClass != "TPDs"){
             if(is.null(globalContour.quant)){
               globalContour.quant <- x$parameters$threshold
             }
@@ -451,7 +407,7 @@ plot.funspace <- function(x = NULL,
                     drawlabels = quant.labels, add = TRUE)
           }
           # Plotting arrows
-          if(arrows == TRUE & x$parameters$princomp == TRUE){
+          if(arrows == TRUE & x$parameters$objectClass == "princomp"){
             graphics::arrows(x0 = 0, y0 = 0,
                              x1 = x$PCAInfo$fit[[1]][, 1] * arrows.length, y1 = x$PCAInfo$fit[[1]][, 2] * arrows.length,
                              length = arrows.head, col = arrows.col)
@@ -462,49 +418,17 @@ plot.funspace <- function(x = NULL,
           }
           # Adding group names
           graphics::legend("topleft", legend = groupName, bty = "n")
-          # Plotting axes titles if panels are not active
-          if(axis.title == TRUE & plot.panels == FALSE){
-            if(x$parameters$princomp == TRUE & is.null(axis.title.x)){
-              Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-              axis.title.x <- paste0("PC", x$parameters$PCs[1], " (", round(Proportion[x$parameters$PCs[1]], 2),"%", ")")
-            }
-            if(x$parameters$princomp == TRUE & is.null(axis.title.y)){
-              Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-              axis.title.y <- paste0("PC", x$parameters$PCs[2], " (", round(Proportion[x$parameters$PCs[2]], 2),"%", ")")
-            }
-            if(is.null(axis.title.x)){
-              axis.title.x <- "Dimension 1"
-            }
-            if(is.null(axis.title.y)){
-              axis.title.y <- "Dimension 2"
-            }
-            graphics::mtext(axis.title.x, cex = axis.title.cex, side = 1, line = 2.2, adj = 0.5)
-            graphics::mtext(axis.title.y, cex = axis.title.cex, side = 2, line = 2.2, adj = 0.5)
+          # Plotting axes titles
+          if(axis.title == TRUE){
+            axistTitle <- axisTitles(x, axis.title.x = axis.title.x, axis.title.y = axis.title.y )
+            graphics::mtext(axistTitle[1], cex = axis.title.cex, side = 1, line = axis.title.line, adj = 0.5)
+            graphics::mtext(axistTitle[2], cex = axis.title.cex, side = 2, line = axis.title.line, adj = 0.5)
           }
         }else{
           groupName <- names(x$groups)[i]
           graphics::plot(0, type = "n", xlab = "", ylab = "", axes = FALSE)
           graphics::legend("center", legend = "No model", bty = "n")
           graphics::legend("topleft", legend = groupName, bty = "n")
-        }
-        # Plotting common axes titles for all panels
-        if(axis.title == TRUE & plot.panels == TRUE){
-          if(x$parameters$princomp == TRUE & is.null(axis.title.x)){
-            Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-            axis.title.x <- paste0("PC", x$parameters$PCs[1], " (", round(Proportion[x$parameters$PCs[1]], 2),"%", ")")
-          }
-          if(x$parameters$princomp == TRUE & is.null(axis.title.y)){
-            Proportion <- 100 * (x$PCAInfo$pca.object$sdev)**2 / sum((x$PCAInfo$pca.object$sdev)**2)
-            axis.title.y <- paste0("PC", x$parameters$PCs[2], " (", round(Proportion[x$parameters$PCs[2]], 2),"%", ")")
-          }
-          if(is.null(axis.title.x)){
-            axis.title.x <- "Dimension 1"
-          }
-          if(is.null(axis.title.y)){
-            axis.title.y <- "Dimension 2"
-          }
-          graphics::mtext(axis.title.x, cex = axis.title.cex, side = 1, line = 2.2, adj = 0.5, outer = TRUE)
-          graphics::mtext(axis.title.y, cex = axis.title.cex, side = 2, line = 2.2, adj = 0.5, outer = TRUE)
         }
       }
     }

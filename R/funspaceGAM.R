@@ -36,43 +36,46 @@ funspaceGAM <- function(y, funspace, family = "gaussian", minObs = 30) {
   #1. Checkings.
   # 1.1 funspace.object must be a pca object of class "funspace"
   if (!inherits(funspace, "funspace")){
-    stop("'funspace' must be a pca object of class 'funspace'")
+    stop("'funspace' must be an object of class 'funspace'")
   }
   # length of y same as number of points in trait space
   if (length(y) != nrow(funspace$parameters$pcs)){
     stop(" number of observations differ between 'y' and 'funspace")
   }
   results <- funspace
-  # FIT A SINGLE GLOBAL MODEL (for all points, regardless of groups): ### IMPORT FROM PREVIOUS
+  # FIT A SINGLE GLOBAL MODEL (for all points, regardless of groups). (Not done for TPD objects)
   #7. GAM model
-  PC1 <- results$parameters$pcs[, 1]
-  PC2 <- results$parameters$pcs[, 2]
-  results$global$gam <- mgcv::gam(y ~ s(PC1, PC2), family = family, method = "REML")
-  #8. Predict across the whole trait space:
-  predAux <- stats::predict(object = results$global$gam,
-                     newdata =  results$parameters$evaluation_grid,
-                     type = "response",
-                     se.fit = TRUE)
-  results$global$predicted <- cbind(results$parameters$evaluation_grid,
-                                    predicted = predAux$fit,
-                                    se = predAux$se.fit)
-  imagePred <- imageSEPred <- results$global$images$TPD.quantiles
-  imagePred[ , ] <- imageSEPred[ , ] <- NA
-  for(k in 1:length(unique(results$parameters$evaluation_grid[, 2]))){
-    colAux <- subset(results$global$predicted,
-                     results$global$predicted[,2] == unique(results$parameters$evaluation_grid[, 2])[k])
-    imagePred[, k] <- colAux$predicted
-    imageSEPred[, k] <- colAux$se
+  if(results$parameters$objectClass != "TPDs"){
+    PC1 <- results$parameters$pcs[, 1]
+    PC2 <- results$parameters$pcs[, 2]
+    results$global$gam <- mgcv::gam(y ~ s(PC1, PC2), family = family, method = "REML")
+    #8. Predict across the whole trait space:
+    predGrid <- results$parameters$evaluation_grid
+    colnames(predGrid) <- c("PC1", "PC2")
+    predAux <- stats::predict(object = results$global$gam,
+                       newdata = predGrid ,
+                       type = "response",
+                       se.fit = TRUE)
+    results$global$predicted <- cbind(results$parameters$evaluation_grid,
+                                      predicted = predAux$fit,
+                                      se = predAux$se.fit)
+    imagePred <- imageSEPred <- results$global$images$TPD.quantiles
+    imagePred[ , ] <- imageSEPred[ , ] <- NA
+    for(k in 1:length(unique(results$parameters$evaluation_grid[, 2]))){
+      colAux <- subset(results$global$predicted,
+                       results$global$predicted[,2] == unique(results$parameters$evaluation_grid[, 2])[k])
+      imagePred[, k] <- colAux$predicted
+      imageSEPred[, k] <- colAux$se
+    }
+    ### apply mask
+    maskQuant <- results$global$images$TPD.quantiles
+    maskQuant[!is.na(maskQuant)] <- 1
+    imagePredMask <- imagePred * maskQuant
+    imageSEPredMask <- imageSEPred * maskQuant
+
+    results$global$images$predicted <- imagePredMask
+    results$global$images$SE.predicted <- imageSEPredMask
   }
-  ### apply mask
-  maskQuant <- results$global$images$TPD.quantiles
-  maskQuant[!is.na(maskQuant)] <- 1
-  imagePredMask <- imagePred * maskQuant
-  imageSEPredMask <- imageSEPred * maskQuant
-
-  results$global$images$predicted <- imagePredMask
-  results$global$images$SE.predicted <- imageSEPredMask
-
   ########## IF there are groups, a model for each group:
   if(!is.null(results$parameters$group.vec)){
     group.vec <- results$parameters$group.vec
@@ -95,8 +98,10 @@ funspaceGAM <- function(y, funspace, family = "gaussian", minObs = 30) {
           results$groups[[targetGroup]]$gam <- mgcv::gam(y_aux ~ s(PC1, PC2), family = family, method = "REML")
           results$groups[[targetGroup]]$gam$exist <- TRUE
           #8. Predict across the whole trait space:
+          predGrid <- results$parameters$evaluation_grid
+          colnames(predGrid) <- c("PC1", "PC2")
           predAux <- stats::predict(object = results$groups[[targetGroup]]$gam,
-                                    newdata = results$parameters$evaluation_grid,
+                                    newdata = predGrid,
                                     type = "response", se.fit = TRUE)
           results$groups[[targetGroup]]$predicted <- cbind(results$parameters$evaluation_grid,
                                                            predicted = predAux$fit,

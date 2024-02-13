@@ -7,6 +7,7 @@
 \method{plot}{funspace}(
   x = NULL,
   type = "global",
+  which.group = NULL,
   quant.plot = FALSE,
   quant = NULL,
   quant.lty = 1,
@@ -30,13 +31,13 @@
   axis.title.x = NULL,
   axis.title.y = NULL,
   axis.title.cex = 1,
+  axis.title.line = 2,
   axis.cex = 1,
   globalContour = TRUE,
   globalContour.quant = NULL,
   globalContour.lwd = 3,
   globalContour.lty = 1,
   globalContour.col = "grey50",
-  plot.panels = TRUE,
   xlim = NULL,
   ylim = NULL,
   ...
@@ -45,7 +46,9 @@
 \arguments{
 \item{x}{A \code{funspace} object produced by \code{funspace()} or \code{funspaceGAM()}.}
 
-\item{type}{character indicating whether the plots should represent the global distribution of observations (\code{type = "global"}), or be separated by the groups (\code{type = "groups"}) provided when the \code{funspace} object was created. Defaults to \code{"global"}}
+\item{type}{character indicating whether the plots should represent the global distribution of observations (\code{type = "global"}), or be separated by the groups (\code{type = "groups"}) provided when the \code{funspace} object was created. Defaults to \code{"global"}. In the case of funspace objects based on a TPD function created with the \code{TPD} package, only groups are plotted (there is no "global" distribution).}
+
+\item{which.group}{when plotting groups, either a character or a number indicating the name (character) or position (number) of a single group to be plotted individually.}
 
 \item{quant.plot}{Logical, Default is \code{TRUE}. Should contour lines representing quantiles (specified in \code{quant}) be plotted?}
 
@@ -93,6 +96,8 @@
 
 \item{axis.title.cex}{Numerical. Graphical parameter to set the size of the axes titles. Default is 1.}
 
+\item{axis.title.line}{Numerical. Graphical parameter to set the on which margin line to plot axes titles. Default is 2.}
+
 \item{axis.cex}{Numerical. Graphical parameter to set the size of the axes annotation. Default is 1.}
 
 \item{globalContour}{Logical, Default is \code{TRUE}. Should a contour line representing the global distribution be plotted when \code{type} is set to \code{"groups"}. Adding a global contour lines provides a common reference for all groups and makes comparisons easier.}
@@ -104,8 +109,6 @@
 \item{globalContour.lty}{type of line to be used to represent the global contour lines. See \code{lty} argument in \code{graphics::par()}. Defaults to 1 (a continuous line).}
 
 \item{globalContour.col}{Graphical parameter to set the color of the global contour lines. Default is \code{"grey50"}.}
-
-\item{plot.panels}{Logical, Default is \code{TRUE}. In case groups are being represented, Should the function split the plot in panels (one panel per group)?}
 
 \item{xlim}{the x limits (x1, x2) of the plot.}
 

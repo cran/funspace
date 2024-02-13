@@ -34,7 +34,7 @@
 #'
 #' @import  ape
 #'          missForest
-#'          phytools
+#' @importFrom phytools add.species.to.genus
 #' @export
 
 impute <- function(traits, phylo = NULL, addingSpecies = FALSE, nEigen = 10,

@@ -15,7 +15,7 @@ funspace(
 )
 }
 \arguments{
-\item{x}{Data to create the functional space. It can be either a PCA object obtained using the \code{princomp} function, or a matrix or data frame with two columns (representing two dimensions which can be traits or ordination scores).}
+\item{x}{Data to create the functional space. It can be either a PCA object obtained using the \code{princomp} function, a PCoA obtained using the \code{capscale} function from the \code{vegan} package, an NMDS generated with the \code{metaMDS} or \code{monoMDS} functions from \code{vegan}, a TPDs object generated with the \code{TPD} package or a matrix or data frame with at least two columns (representing two dimensions which can be either traits or ordination scores obtained with other methods).}
 
 \item{PCs}{A vector specifying the Principal Components to be considered (e.g. choosing \code{PCs = c(1,2)} would lead to to consider the first and the second principal components). Only applies if \code{x} contains a PCA. Defaults to \code{c(1, 2)}, which selects the first two principal components.}
 

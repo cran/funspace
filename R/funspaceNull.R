@@ -5,6 +5,7 @@
 #'@details
 #'
 #'\code{funspaceNull} The function tests for the statistical difference between the size (functional richness) of the considered TPD, obtained using the \code{funspace} function, against a vector of functional richness values generated using null models (see below) across a user-defined number of iterations. Two null models are currently available for testing. One generates data with a multivariate normal distribution, creating a dataset with normally distributed variables having the same mean and covariance than the observations used to build the functional space (see Carmona et al. 2021). This null model returns a theoretical TPD where some trait combinations (those around the mean of the trait space axes, thus towards the center of the null trait space) are more likely than others (i.e., this null model resembles an ellipse). The other null model generates a dataset with variables following a uniform distribution (see null model 1 in Diaz et al. 2016), creating a distribution where all trait combinations within the range of the original observations are equally possible (i.e., the approximate shape of this null model is a rectangle).
+#' Note that the function does not work for funspace objects that are based on a TPDs object created using the package \code{TPD}
 #'
 #'@references
 #'
@@ -43,10 +44,13 @@ funspaceNull <- function(funspace, nrep = 100,
   #1. Checkings.
   # 1.1 funspace.object must be a pca object of class "funspace"
   if (!inherits(funspace, "funspace")){
-    stop("'funspace' must be a pca object of class 'funspace'")
+    stop("'funspace' must be an object of class 'funspace'")
   }
   if (!(null.distribution %in% c("multnorm", "uniform"))){
     stop("'null.distribution' must be either 'multnorm' or 'uniform'")
+  }
+  if (funspace$parameters$objectClass == "TPDs"){
+    stop("'funspaceNull' does not support funspace objects based on a TPDs function")
   }
   n_divisions <- sqrt(nrow(funspace$parameters$evaluation_grid))
 

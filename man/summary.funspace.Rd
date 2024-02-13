@@ -19,12 +19,11 @@ No return value. This function is called for its side effect: summarizing object
 \code{summary} method for class \code{funspace}"
 }
 \details{
-Produces default summary. If the input object was generated with \code{funspace()}, the summary includes information about the characteristics of the functional space (particularly if it derives from a PCA), along with functional diversity indicators (functional richness and functional divergence) for the whole set of observations and for each group (in case groups are specified). If the input object was generated with \code{funspaceGAM()}, the function returns the summary for the GAM models for the whole set of observations and individual groups. If the input was generated  with \code{funspaceNull()}, the function returns tests exploring the difference between the observed functional richness and the null model functional richness.
+Produces default summary. If the input object was generated with \code{funspace()}, the summary includes information about the characteristics of the functional space (particularly if it derives from a PCA), along with functional diversity indicators (functional richness and functional divergence) for the whole set of observations and for each group (in case groups are specified). If the input object was generated with \code{funspaceGAM()}, the function returns the summary for the GAM models for the whole set of observations and individual groups. In the case of funspace objects based on a TPD object created with the \code{TPD} package, only information about groups is provided (since there is no global distribution). If the input was generated  with \code{funspaceNull()}, the function returns tests exploring the difference between the observed functional richness and the null model functional richness.
 }
 \examples{
 x <- princomp(GSPFF)
 funtest <- funspace(x = x, PCs = c(1, 2), threshold = 0.95)
 summary(funtest)
-
 
 }
